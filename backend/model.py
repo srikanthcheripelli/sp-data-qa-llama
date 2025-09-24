@@ -1,25 +1,26 @@
-from transformers import LlamaForCausalLM, LlamaTokenizer, pipeline
+from transformers import LlamaForCausalLM, LlamaTokenizer
+import torch
+import os
 
-# Use a public Llama model to avoid gated repo issues
-MODEL_PATH = "HuggingFaceH4/zephyr-7b-beta"
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "llama-2-7b")  # local folder
 
-# Load tokenizer and model
-tokenizer = LlamaTokenizer.from_pretrained(MODEL_PATH)
-model = LlamaForCausalLM.from_pretrained(MODEL_PATH)
+# Load tokenizer from local folder
+tokenizer = LlamaTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
 
-# Create text-generation pipeline
-qa_pipeline = pipeline(
-    "text-generation",
-    model=model,
-    tokenizer=tokenizer,
-)
+# Load model from local folder
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model = LlamaForCausalLM.from_pretrained(MODEL_PATH, device_map="auto", local_files_only=True)
 
-def answer_question(question: str) -> str:
-    result = qa_pipeline(
-        question,
-        max_new_tokens=200,
-        do_sample=True,
-        temperature=0.7
-    )
-    return result[0]["generated_text"]
+def answer_question(question, max_length=256):
+    inputs = tokenizer(question, return_tensors="pt").to(device)
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=max_length,
+            do_sample=True,
+            temperature=0.7,
+            top_p=0.9
+        )
+    answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return answer
 

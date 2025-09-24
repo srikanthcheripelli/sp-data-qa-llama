@@ -1,11 +1,10 @@
-from model import answer_question
+# test_qa.py
+from model import answer_question, add_qa_pair
 
-questions = [
-    "What is SP Dashboard?",
-    "How do I calculate unplanned quantity?"
-]
+# Add a QA pair
+add_qa_pair("What is SP?", "SP stands for Service Provider.")
 
-for q in questions:
-    answer = answer_question(q)
-    print(f"Q: {q}\nA: {answer}\n")
+# Test answering
+print(answer_question("What is SP?"))
+print(answer_question("Explain the AI model."))
 
