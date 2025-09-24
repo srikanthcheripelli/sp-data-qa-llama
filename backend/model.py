@@ -1,13 +1,25 @@
-from transformers import LlamaForCausalLM, LlamaTokenizer
-import torch
+from transformers import LlamaForCausalLM, LlamaTokenizer, pipeline
 
-MODEL_PATH = "path/to/llama"  # replace with your LLaMA weights folder
+# Use a public Llama model to avoid gated repo issues
+MODEL_PATH = "HuggingFaceH4/zephyr-7b-beta"
 
+# Load tokenizer and model
 tokenizer = LlamaTokenizer.from_pretrained(MODEL_PATH)
-model = LlamaForCausalLM.from_pretrained(MODEL_PATH, device_map="auto")
+model = LlamaForCausalLM.from_pretrained(MODEL_PATH)
 
-def answer_question(prompt, max_length=200):
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    outputs = model.generate(**inputs, max_new_tokens=max_length)
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
+# Create text-generation pipeline
+qa_pipeline = pipeline(
+    "text-generation",
+    model=model,
+    tokenizer=tokenizer,
+)
+
+def answer_question(question: str) -> str:
+    result = qa_pipeline(
+        question,
+        max_new_tokens=200,
+        do_sample=True,
+        temperature=0.7
+    )
+    return result[0]["generated_text"]
 
